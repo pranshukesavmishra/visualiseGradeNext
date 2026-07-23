@@ -10,6 +10,23 @@ The goal is simple: help a child's brain *see* how code works, not just read it.
 
 ![GradeNext screenshot](docs/screenshot.png)
 
+## Two modes
+
+GradeNext has a mode switch in the top-right:
+
+- **🎓 Learn** — the animated, step-by-step visualiser for a small, safe
+  beginner language. Great for fundamentals: variables, loops, lists, sorting.
+- **🐍 Real Python** — runs **genuine Python in your browser** via
+  [Pyodide](https://pyodide.org), including `numpy`, `pandas`, `scikit-learn`
+  and `matplotlib`. Real data-science and machine-learning code runs here, with
+  console output and charts. (Deep-learning frameworks like TensorFlow/PyTorch
+  and GenAI APIs are **not** supported — they can't run inside a browser.)
+
+> **Real Python needs the internet.** The first run downloads the Python runtime
+> (~10 MB) from a CDN, so this mode does **not** work inside a sandboxed preview
+> that blocks outside requests — run the app locally or deploy it. The Learn mode
+> works fully offline once loaded.
+
 ## Why this exists
 
 Beginners can copy code without understanding what happens inside the computer.
@@ -70,12 +87,18 @@ src/
     interpreter.ts   # AST   -> an array of "frames" (state snapshots)
     examples.ts      # the built-in sample programs
     types.ts         # shared types (Frame, Value, ...)
+  python/
+    pyodideRunner.ts # loads Pyodide, runs real Python, captures output + plots
+    examples.ts      # real-Python samples (pandas, matplotlib, scikit-learn)
   components/
     CodeEditor.tsx   # textarea + highlight strip for the running line
     Stage.tsx        # the "movie screen": narration + variables + console
     VariablesPanel.tsx / ArrayViz.tsx / Console.tsx
     Player.tsx       # the video-style transport controls
-  App.tsx            # ties code -> frames -> playback together
+  modes/
+    LearnMode.tsx    # the animated visualiser workspace
+    PythonLab.tsx    # the Real Python workspace (editor + output + charts)
+  App.tsx            # mode switch + shell
 ```
 
 The interpreter runs the whole program up front and records a **frame** after
