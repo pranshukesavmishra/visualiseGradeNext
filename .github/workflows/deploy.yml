@@ -7,7 +7,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - claude/student-coding-visualization-platform-sx0kso
+      - main
   workflow_dispatch:
 
 permissions:
