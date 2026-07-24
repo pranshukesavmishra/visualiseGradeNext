@@ -39,6 +39,7 @@ export default function Stage({ frame, aboveVars }: Props) {
       >
         <div className="icon">{ICONS[kind]}</div>
         <div className="text">{note}</div>
+        {frame && frame.line > 0 && <div className="line-badge">line {frame.line}</div>}
       </motion.div>
 
       {stack.length > 0 && (

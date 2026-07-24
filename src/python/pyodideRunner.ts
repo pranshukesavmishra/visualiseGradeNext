@@ -227,6 +227,18 @@ def _gn_run(_src):
         finally:
             sys.settrace(None)
 
+    # Terminal frame: line events fire BEFORE a line runs, so the last line's
+    # output would otherwise never appear. Append a final snapshot that shows
+    # the complete console output (and keeps the last variable state visible).
+    if not _truncated[0]:
+        _frames.append({
+            'line': 0,
+            'vars': _frames[-1]['vars'] if _frames else {},
+            'olen': _buf.getvalue().count('\\n'),
+            'stack': [],
+            'node': -1,
+        })
+
     return json.dumps({
         'frames': _frames,
         'tree': _nodes,

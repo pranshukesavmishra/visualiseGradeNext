@@ -22,6 +22,23 @@ export function buildFrames(trace: RawFrame[], output: string, source: string): 
 
   for (let i = 0; i < trace.length; i++) {
     const raw = trace[i]
+
+    // Terminal frame (line 0) — show the finished state with all output.
+    if (raw.line === 0) {
+      frames.push({
+        line: 0,
+        vars: raw.vars,
+        output: outLines.slice(0, raw.olen),
+        note: 'Finished 🎉',
+        accesses: [],
+        kind: 'done',
+        stack: raw.stack,
+        nodeId: -1,
+      })
+      prev = raw.vars
+      continue
+    }
+
     const lineText = (srcLines[raw.line - 1] || '').trim()
     const change = diff(prev, raw.vars)
 
