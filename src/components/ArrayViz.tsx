@@ -5,6 +5,7 @@ import { formatValue } from '../lang/interpreter'
 export interface Pointer {
   name: string // the variable that holds this index
   index: number // the cell it points at
+  colorIndex?: number // which pointer colour to use (0..3)
 }
 
 interface Props {
@@ -104,7 +105,7 @@ function PointerBadges({ pointers }: { pointers: Pointer[] }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="ptr-badge"
+            className={`ptr-badge c${(p.colorIndex ?? 0) % 4}`}
           >
             <span className="ptr-arrow">▲</span>
             {p.name}

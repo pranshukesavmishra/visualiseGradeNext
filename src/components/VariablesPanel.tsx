@@ -20,13 +20,16 @@ export default function VariablesPanel({ vars, accesses }: Props) {
     ([, v]) => typeof v === 'number' && Number.isInteger(v),
   ) as [string, number][]
 
+  // Assign each index variable a stable colour so i, j, k read distinctly.
+  const colorOf = new Map(intScalars.map(([n], i) => [n, i % 4]))
+
   const pointersFor = (listName: string, len: number): Pointer[] =>
     intScalars
       .filter(([, idx]) => idx >= 0 && idx < len)
       // Heuristic: only treat short-named counters as pointers, and only when
       // the list is non-trivial, to avoid noise from unrelated numbers.
       .filter(([n]) => n.length <= 12 && len > 1 && isIndexLike(n, listName))
-      .map(([n, idx]) => ({ name: n, index: idx }))
+      .map(([n, idx]) => ({ name: n, index: idx, colorIndex: colorOf.get(n) ?? 0 }))
 
   if (entries.length === 0) {
     return <div className="empty-hint">No variables yet — they will pop up here as the code runs. ✨</div>

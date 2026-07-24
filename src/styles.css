@@ -454,26 +454,43 @@ button {
   position: absolute;
   left: 0;
   right: 0;
+  z-index: 0;
   height: var(--line-height);
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.16), rgba(139, 92, 246, 0.06));
-  border-left: 2px solid var(--cyan);
-  box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.12);
+  background: linear-gradient(90deg, rgba(74, 222, 128, 0.16), rgba(34, 211, 238, 0.05));
+  border-left: 2px solid var(--lime);
+  box-shadow: inset 0 0 20px rgba(74, 222, 128, 0.1);
   pointer-events: none;
   transition: top 0.16s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.code-input {
+/* Syntax-highlighted layer that shows through the transparent textarea. */
+.hl-layer {
   position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 14px 16px;
+  min-height: 280px;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre;
+  color: var(--code-ink);
+  pointer-events: none;
+}
+
+.code-input {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   width: 100%;
   height: 100%;
-  min-height: 280px;
   margin: 0;
   padding: 14px 16px;
   border: none;
   outline: none;
   resize: none;
   background: transparent;
-  color: var(--code-ink);
+  color: transparent;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
@@ -482,6 +499,23 @@ button {
   overflow: hidden;
   caret-color: var(--cyan);
 }
+
+/* Syntax token colours */
+.t-kw { color: #c792ea; font-weight: 600; }
+.t-bi { color: #82aaff; }
+.t-fn { color: #22d3ee; }
+.t-str { color: #9ade6a; }
+.t-num { color: #f78c6c; }
+.t-com { color: var(--ink-faint); font-style: italic; }
+.t-op { color: #8fa3c8; }
+.t-var { color: var(--code-ink); }
+
+:root[data-theme='light'] .t-kw { color: #8b5cf6; }
+:root[data-theme='light'] .t-bi { color: #2563eb; }
+:root[data-theme='light'] .t-fn { color: #0891b2; }
+:root[data-theme='light'] .t-str { color: #16a34a; }
+:root[data-theme='light'] .t-num { color: #ea580c; }
+:root[data-theme='light'] .t-op { color: #475569; }
 
 /* ---------- Buttons / toolbar ---------- */
 
@@ -788,19 +822,36 @@ button {
   font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 800;
-  color: #12030c;
-  background: linear-gradient(135deg, var(--magenta), #fb7185);
+  color: #06121a;
   padding: 2px 8px 3px;
   border-radius: 7px;
   line-height: 1.1;
+}
+
+.ptr-badge.c0 {
+  background: linear-gradient(135deg, #22d3ee, #06b6d4);
+  box-shadow: var(--glow-a);
+}
+.ptr-badge.c1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.55);
+}
+.ptr-badge.c2 {
+  background: linear-gradient(135deg, #f472b6, #db2777);
   box-shadow: var(--glow-m);
+  color: #1a0410;
+}
+.ptr-badge.c3 {
+  background: linear-gradient(135deg, #a3e635, #65a30d);
+  box-shadow: var(--glow-l);
 }
 
 .ptr-arrow {
   font-size: 8px;
   line-height: 1;
   margin-bottom: 1px;
-  color: var(--magenta);
+  color: currentColor;
+  opacity: 0.85;
 }
 
 .chip-list {

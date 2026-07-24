@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { highlightCode } from '../lib/highlight'
 
 interface Props {
   code: string
@@ -9,14 +10,14 @@ interface Props {
 const LINE_HEIGHT = 24 // keep in sync with --line-height in styles.css
 const PADDING_TOP = 14 // keep in sync with .code-input padding-top
 
-// A lightweight code editor: a plain <textarea> on top of a highlight strip
-// that marks the line currently being executed. No heavy editor dependency,
-// which keeps the app fast and the line-highlighting perfectly in sync.
+// A lightweight code editor: a transparent <textarea> sitting on top of a
+// syntax-highlighted layer, plus a strip that marks the running line. No heavy
+// editor dependency, and the line highlight stays perfectly in sync.
 export default function CodeEditor({ code, onChange, activeLine }: Props) {
   const lineCount = useMemo(() => Math.max(code.split('\n').length, 1), [code])
+  const highlighted = useMemo(() => highlightCode(code) + '\n', [code])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Insert spaces on Tab so young learners don't lose focus to the page.
     if (e.key === 'Tab') {
       e.preventDefault()
       const el = e.currentTarget
@@ -46,6 +47,7 @@ export default function CodeEditor({ code, onChange, activeLine }: Props) {
             style={{ top: PADDING_TOP + (activeLine - 1) * LINE_HEIGHT }}
           />
         )}
+        <pre className="hl-layer" aria-hidden="true" dangerouslySetInnerHTML={{ __html: highlighted }} />
         <textarea
           className="code-input"
           value={code}
