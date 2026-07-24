@@ -43,12 +43,13 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="bg-fx" aria-hidden="true" />
       <header className="masthead">
         <div className="brand">
-          <div className="brand-badge">✨</div>
+          <div className="brand-badge">⬡</div>
           <div>
-            <h1>GradeNext</h1>
-            <p>Write code. Watch it come alive.</p>
+            <h1>Grade<span className="acc">Next</span></h1>
+            <p>// watch your code execute</p>
           </div>
         </div>
 

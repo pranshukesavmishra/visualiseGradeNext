@@ -8,9 +8,8 @@ const THEME_KEY = 'gradenext:theme'
 export function getInitialTheme(): Theme {
   const saved = safeGet(THEME_KEY)
   if (saved === 'light' || saved === 'dark') return saved
-  const prefersDark =
-    typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
-  return prefersDark ? 'dark' : 'light'
+  // Default to the dark "tech" look unless the user has chosen otherwise.
+  return 'dark'
 }
 
 export function applyTheme(theme: Theme): void {
