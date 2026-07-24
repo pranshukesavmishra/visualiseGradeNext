@@ -46,6 +46,12 @@ rewind, and scrub** — turning an abstract idea into something you can watch.
 - 🧒 **Friendly errors** — plain-English messages with the line number, and it
   can never freeze the browser (steps and loops are capped).
 - 🎈 **Seven built-in examples** from counting stars to a sorting machine.
+- 🧭 **Pointer arrows** — index variables (`i`, `j`, `pivot`…) show as badges under
+  the exact list cells they point to, so loops and searches make sense.
+- 🧱 **Call-stack panel** — recursive programs (e.g. quicksort) show the live call
+  stack and depth.
+- 🌗 **Light & dark themes**, a **Share link** (the program is packed into the URL),
+  **autosave**, and **keyboard shortcuts** (space = play/pause, ← → = step).
 
 ## The mini-language
 

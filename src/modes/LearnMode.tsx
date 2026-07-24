@@ -4,10 +4,16 @@ import { EXAMPLES, DEFAULT_EXAMPLE } from '../lang/examples'
 import CodeEditor from '../components/CodeEditor'
 import Stage from '../components/Stage'
 import Player from '../components/Player'
+import { loadCode, saveCode } from '../lib/prefs'
+
+interface Props {
+  seedCode?: string
+  reportCode: (code: string) => void
+}
 
 // "Learn" mode: the animated, step-by-step visualiser for young learners.
-export default function LearnMode() {
-  const [code, setCode] = useState(DEFAULT_EXAMPLE.code)
+export default function LearnMode({ seedCode, reportCode }: Props) {
+  const [code, setCode] = useState(seedCode ?? loadCode('learn') ?? DEFAULT_EXAMPLE.code)
   const [activeExample, setActiveExample] = useState(DEFAULT_EXAMPLE.id)
   const [index, setIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -46,6 +52,33 @@ export default function LearnMode() {
       if (intervalRef.current !== null) window.clearInterval(intervalRef.current)
     }
   }, [playing, speed, total])
+
+  // Autosave the code and report it upward (for the Share button).
+  useEffect(() => {
+    saveCode('learn', code)
+    reportCode(code)
+  }, [code, reportCode])
+
+  // Keyboard shortcuts: space = play/pause, ← → = step (ignored while typing).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
+      if (e.key === ' ') {
+        e.preventDefault()
+        handlePlayPause()
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        setPlaying(false)
+        setIndex((i) => Math.min(total - 1, i + 1))
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        setPlaying(false)
+        setIndex((i) => Math.max(0, i - 1))
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [total, clampedIndex])
 
   function loadExample(id: string) {
     const ex = EXAMPLES.find((e) => e.id === id)

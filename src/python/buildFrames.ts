@@ -10,6 +10,7 @@ export interface RawFrame {
   line: number
   vars: Record<string, Value>
   olen: number // number of complete console lines printed so far
+  stack?: string[] // user function names, outermost → current
 }
 
 export function buildFrames(trace: RawFrame[], output: string, source: string): Frame[] {
@@ -45,6 +46,7 @@ export function buildFrames(trace: RawFrame[], output: string, source: string): 
       note: note || `Line ${raw.line}`,
       accesses: change.accesses,
       kind,
+      stack: raw.stack,
     })
     prev = raw.vars
   }

@@ -4,12 +4,18 @@ import Stage from '../components/Stage'
 import Player from '../components/Player'
 import { PY_EXAMPLES, DEFAULT_PY_EXAMPLE } from '../python/examples'
 import { runPython, PyRunResult } from '../python/pyodideRunner'
+import { loadCode, saveCode } from '../lib/prefs'
+
+interface Props {
+  seedCode?: string
+  reportCode: (code: string) => void
+}
 
 // "Real Python" mode: runs genuine Python (numpy, pandas, scikit-learn,
 // matplotlib) in the browser via Pyodide, traces it line-by-line, and replays
 // it in the SAME animated visualiser as Learn mode — plus charts and console.
-export default function PythonLab() {
-  const [code, setCode] = useState(DEFAULT_PY_EXAMPLE.code)
+export default function PythonLab({ seedCode, reportCode }: Props) {
+  const [code, setCode] = useState(seedCode ?? loadCode('python') ?? DEFAULT_PY_EXAMPLE.code)
   const [activeExample, setActiveExample] = useState(DEFAULT_PY_EXAMPLE.id)
   const [running, setRunning] = useState(false)
   const [status, setStatus] = useState('')
@@ -43,6 +49,44 @@ export default function PythonLab() {
       if (intervalRef.current !== null) window.clearInterval(intervalRef.current)
     }
   }, [playing, speed, total])
+
+  // Autosave + report code for the Share button.
+  useEffect(() => {
+    saveCode('python', code)
+    reportCode(code)
+  }, [code, reportCode])
+
+  function togglePlay() {
+    if (total === 0) return
+    if (clampedIndex >= total - 1) {
+      setIndex(0)
+      setPlaying(true)
+    } else {
+      setPlaying((p) => !p)
+    }
+  }
+
+  // Keyboard shortcuts for playback (ignored while typing in the editor).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
+      if (total === 0) return
+      if (e.key === ' ') {
+        e.preventDefault()
+        togglePlay()
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        setPlaying(false)
+        setIndex((i) => Math.min(total - 1, i + 1))
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        setPlaying(false)
+        setIndex((i) => Math.max(0, i - 1))
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [total, clampedIndex])
 
   async function handleRun() {
     setRunning(true)
@@ -160,14 +204,7 @@ export default function PythonLab() {
                   total={total}
                   playing={playing}
                   speed={speed}
-                  onPlayPause={() => {
-                    if (clampedIndex >= total - 1) {
-                      setIndex(0)
-                      setPlaying(true)
-                    } else {
-                      setPlaying((p) => !p)
-                    }
-                  }}
+                  onPlayPause={togglePlay}
                   onSeek={(i) => {
                     setPlaying(false)
                     setIndex(i)

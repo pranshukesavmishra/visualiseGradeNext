@@ -126,6 +126,18 @@ def _gn_capture(frame):
         d[k] = _gn_snap(val)
     return d
 
+def _gn_stack(frame):
+    names = []
+    f = frame
+    while f is not None:
+        if f.f_code.co_filename == _GN_FILE:
+            name = f.f_code.co_name
+            if name != '<module>':
+                names.append(name)
+        f = f.f_back
+    names.reverse()
+    return names
+
 def _gn_run(_src):
     _frames = []
     _MAX = 1500
@@ -141,6 +153,7 @@ def _gn_run(_src):
                     'line': frame.f_lineno,
                     'vars': _gn_capture(frame),
                     'olen': _buf.getvalue().count('\\n'),
+                    'stack': _gn_stack(frame),
                 })
             else:
                 _truncated[0] = True

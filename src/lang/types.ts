@@ -26,6 +26,7 @@ export interface Frame {
   note: string // kid-friendly narration of this step
   accesses: Access[] // list cells touched in this step (for highlighting)
   kind: StepKind // used to pick an icon / colour for the step
+  stack?: string[] // call stack of user function names (outermost → current)
 }
 
 export type StepKind =
