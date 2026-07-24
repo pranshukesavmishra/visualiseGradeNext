@@ -90,11 +90,18 @@ export async function runPython(code: string, onStatus?: (msg: string) => void):
   try {
     const pyodide = await getPyodide(onStatus)
 
+    // Pyodide's batched stdout callback delivers one line at a time WITHOUT
+    // its trailing newline, so we collect the lines and rejoin them below.
     pyodide.setStdout({ batched: (s) => out.push(s) })
     pyodide.setStderr({ batched: (s) => out.push(s) })
 
-    // Use a non-interactive matplotlib backend so figures render to images.
-    await pyodide.runPythonAsync("import os\nos.environ.setdefault('MPLBACKEND', 'AGG')")
+    // Use a non-interactive matplotlib backend so figures render to images,
+    // and hide noisy library warnings so the output stays clean for learners.
+    await pyodide.runPythonAsync(
+      "import os, warnings\n" +
+        "os.environ.setdefault('MPLBACKEND', 'AGG')\n" +
+        "warnings.filterwarnings('ignore')",
+    )
 
     onStatus?.('Installing libraries…')
     await pyodide.loadPackagesFromImports(code)
@@ -110,10 +117,10 @@ export async function runPython(code: string, onStatus?: (msg: string) => void):
       // no plots, or matplotlib not used
     }
 
-    return { stdout: out.join(''), images, error: null }
+    return { stdout: out.join('\n'), images, error: null }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    return { stdout: out.join(''), images: [], error: cleanTraceback(message) }
+    return { stdout: out.join('\n'), images: [], error: cleanTraceback(message) }
   }
 }
 
