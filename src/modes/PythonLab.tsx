@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import CodeEditor from '../components/CodeEditor'
+import Stage from '../components/Stage'
+import Player from '../components/Player'
 import { PY_EXAMPLES, DEFAULT_PY_EXAMPLE } from '../python/examples'
 import { runPython, PyRunResult } from '../python/pyodideRunner'
 
 // "Real Python" mode: runs genuine Python (numpy, pandas, scikit-learn,
-// matplotlib) in the browser via Pyodide, and shows console output + charts.
+// matplotlib) in the browser via Pyodide, traces it line-by-line, and replays
+// it in the SAME animated visualiser as Learn mode — plus charts and console.
 export default function PythonLab() {
   const [code, setCode] = useState(DEFAULT_PY_EXAMPLE.code)
   const [activeExample, setActiveExample] = useState(DEFAULT_PY_EXAMPLE.id)
@@ -12,14 +15,48 @@ export default function PythonLab() {
   const [status, setStatus] = useState('')
   const [result, setResult] = useState<PyRunResult | null>(null)
 
+  const [index, setIndex] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState(1)
+
+  const frames = result?.frames ?? []
+  const total = frames.length
+  const clampedIndex = Math.min(index, Math.max(total - 1, 0))
+  const frame = total > 0 ? frames[clampedIndex] : null
+  const activeLine = frame?.line ?? 0
+
+  // Playback timer: advance frames while "playing".
+  const intervalRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!playing) return
+    const delay = 650 / speed
+    intervalRef.current = window.setInterval(() => {
+      setIndex((i) => {
+        if (i >= total - 1) {
+          setPlaying(false)
+          return i
+        }
+        return i + 1
+      })
+    }, delay)
+    return () => {
+      if (intervalRef.current !== null) window.clearInterval(intervalRef.current)
+    }
+  }, [playing, speed, total])
+
   async function handleRun() {
     setRunning(true)
+    setPlaying(false)
     setResult(null)
+    setIndex(0)
     setStatus('Getting Python ready…')
     const res = await runPython(code, setStatus)
     setResult(res)
     setStatus('')
     setRunning(false)
+    setIndex(0)
+    // Auto-play the visualisation like a video once steps are ready.
+    if (res.frames.length > 1) setPlaying(true)
   }
 
   function loadExample(id: string) {
@@ -28,6 +65,8 @@ export default function PythonLab() {
     setActiveExample(id)
     setCode(ex.code)
     setResult(null)
+    setIndex(0)
+    setPlaying(false)
   }
 
   return (
@@ -56,11 +95,18 @@ export default function PythonLab() {
             <div className="panel-head-spacer" />
           </div>
 
-          <CodeEditor code={code} onChange={setCode} activeLine={0} />
+          <CodeEditor
+            code={code}
+            onChange={(c) => {
+              setCode(c)
+              setActiveExample('')
+            }}
+            activeLine={activeLine}
+          />
 
           <div className="toolbar">
             <button className="btn primary" onClick={handleRun} disabled={running}>
-              {running ? '⏳ Running…' : '▶ Run Python'}
+              {running ? '⏳ Running…' : '▶ Run & Visualise'}
             </button>
             <button
               className="btn ghost"
@@ -72,53 +118,96 @@ export default function PythonLab() {
           </div>
         </section>
 
-        {/* Right: results */}
+        {/* Right: animated visualisation + charts */}
         <section className="panel">
           <div className="panel-head">
-            <h2>Output</h2>
+            <h2>Visualiser</h2>
             <span className="grade-tag">live</span>
             <div className="panel-head-spacer" />
           </div>
 
-          <div className="py-results">
-            {running && (
+          {running && (
+            <div className="py-results">
               <div className="py-status">
                 <span className="spinner" aria-hidden="true" />
                 <span>{status || 'Working…'}</span>
               </div>
-            )}
+            </div>
+          )}
 
-            {!running && !result && (
+          {!running && !result && (
+            <div className="py-results">
               <div className="empty-hint">
-                Press <strong>▶ Run Python</strong> to run real Python code. The first run
-                downloads Python to your browser (about 10&nbsp;MB, just once).
+                Press <strong>▶ Run &amp; Visualise</strong> to watch your Python run step by step.
+                The first run downloads Python to your browser (about 10&nbsp;MB, just once).
               </div>
-            )}
+            </div>
+          )}
 
-            {result?.error && (
+          {!running && result && total === 0 && result.error && (
+            <div className="py-results">
               <pre className="py-error">{result.error}</pre>
-            )}
+            </div>
+          )}
 
-            {result && (result.stdout || !result.error) && (
-              <>
-                <div className="stage-section-title">Console</div>
-                <pre className="py-console">
-                  {result.stdout ? result.stdout : '(no text output)'}
-                </pre>
-              </>
-            )}
+          {!running && result && total > 0 && (
+            <>
+              <Stage frame={frame} />
 
-            {result && result.images.length > 0 && (
-              <>
-                <div className="stage-section-title">Charts</div>
-                <div className="py-plots">
-                  {result.images.map((img, i) => (
-                    <img key={i} src={`data:image/png;base64,${img}`} alt={`chart ${i + 1}`} />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+              <div style={{ padding: '0 18px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <Player
+                  index={clampedIndex}
+                  total={total}
+                  playing={playing}
+                  speed={speed}
+                  onPlayPause={() => {
+                    if (clampedIndex >= total - 1) {
+                      setIndex(0)
+                      setPlaying(true)
+                    } else {
+                      setPlaying((p) => !p)
+                    }
+                  }}
+                  onSeek={(i) => {
+                    setPlaying(false)
+                    setIndex(i)
+                  }}
+                  onStepBack={() => {
+                    setPlaying(false)
+                    setIndex((i) => Math.max(0, i - 1))
+                  }}
+                  onStepForward={() => {
+                    setPlaying(false)
+                    setIndex((i) => Math.min(total - 1, i + 1))
+                  }}
+                  onRestart={() => {
+                    setPlaying(false)
+                    setIndex(0)
+                  }}
+                  onSpeed={setSpeed}
+                />
+
+                {result.truncated && (
+                  <div className="py-note">
+                    This program has many steps — showing the first {total} so it stays smooth.
+                  </div>
+                )}
+
+                {result.error && <pre className="py-error">{result.error}</pre>}
+
+                {result.images.length > 0 && (
+                  <>
+                    <div className="stage-section-title">Charts</div>
+                    <div className="py-plots">
+                      {result.images.map((img, i) => (
+                        <img key={i} src={`data:image/png;base64,${img}`} alt={`chart ${i + 1}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </section>
       </div>
     </>

@@ -11,6 +11,41 @@ export interface PyExample {
 
 export const PY_EXAMPLES: PyExample[] = [
   {
+    id: 'selection-sort',
+    title: 'Selection Sort',
+    emoji: '📊',
+    tag: 'watch it sort',
+    code: `# Watch the bars sort themselves, step by step!
+def selection_sort(numbers):
+    n = len(numbers)
+    for i in range(n):
+        min_index = i
+        for j in range(i + 1, n):
+            if numbers[j] < numbers[min_index]:
+                min_index = j
+        if min_index != i:
+            numbers[i], numbers[min_index] = numbers[min_index], numbers[i]
+    return numbers
+
+nums = [29, 72, 98, 13, 87, 66, 52, 51, 36]
+selection_sort(nums)
+print("Sorted:", nums)`,
+  },
+  {
+    id: 'bubble-sort',
+    title: 'Bubble Sort',
+    emoji: '🫧',
+    tag: 'watch it sort',
+    code: `# Bubble sort: swap neighbours until it's in order
+nums = [5, 2, 9, 1, 7, 3]
+n = len(nums)
+for i in range(n):
+    for j in range(n - 1 - i):
+        if nums[j] > nums[j + 1]:
+            nums[j], nums[j + 1] = nums[j + 1], nums[j]
+print("Sorted:", nums)`,
+  },
+  {
     id: 'basics',
     title: 'Python Basics',
     emoji: '🐍',
@@ -23,8 +58,10 @@ names = ["Aria", "Ben", "Chloe"]
 for n in names:
     print(greet(n))
 
-squares = {x: x * x for x in range(1, 6)}
-print("Squares:", squares)`,
+total = 0
+for x in range(1, 6):
+    total = total + x
+print("Sum 1..5 =", total)`,
   },
   {
     id: 'pandas',
@@ -142,4 +179,4 @@ plt.show()`,
   },
 ]
 
-export const DEFAULT_PY_EXAMPLE = PY_EXAMPLES[0]
+export const DEFAULT_PY_EXAMPLE = PY_EXAMPLES[0] // Selection Sort
