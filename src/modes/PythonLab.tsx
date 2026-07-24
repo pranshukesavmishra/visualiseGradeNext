@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import CodeEditor from '../components/CodeEditor'
 import Stage from '../components/Stage'
 import Player from '../components/Player'
+import TreeView from '../components/TreeView'
 import { PY_EXAMPLES, DEFAULT_PY_EXAMPLE } from '../python/examples'
 import { runPython, PyRunResult } from '../python/pyodideRunner'
 import { loadCode, saveCode } from '../lib/prefs'
@@ -196,7 +197,21 @@ export default function PythonLab({ seedCode, reportCode }: Props) {
 
           {!running && result && total > 0 && (
             <>
-              <Stage frame={frame} />
+              <Stage
+                frame={frame}
+                aboveVars={
+                  result.tree.length > 0 ? (
+                    <>
+                      <div className="stage-section-title">Recursion tree</div>
+                      <TreeView
+                        nodes={result.tree}
+                        currentIndex={clampedIndex}
+                        activeId={frame?.nodeId ?? -1}
+                      />
+                    </>
+                  ) : null
+                }
+              />
 
               <div style={{ padding: '0 18px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <Player

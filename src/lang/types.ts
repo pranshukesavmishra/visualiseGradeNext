@@ -4,7 +4,17 @@
 // young learners: variables, numbers, strings, lists, print, if/elif/else,
 // while and for loops, and a handful of built-in helpers.
 
-export type Value = number | string | boolean | Value[]
+export type Value = number | string | boolean | Value[] | DictValue
+
+// A Python dict, kept structured so the UI can show key → value chips.
+export interface DictValue {
+  __kind__: 'dict'
+  entries: [string, Value][]
+}
+
+export function isDict(v: Value): v is DictValue {
+  return typeof v === 'object' && v !== null && !Array.isArray(v) && (v as DictValue).__kind__ === 'dict'
+}
 
 // A single access to a list element during a step. Used to highlight
 // which cells were touched (and how) while animating the visualisation.
@@ -27,6 +37,17 @@ export interface Frame {
   accesses: Access[] // list cells touched in this step (for highlighting)
   kind: StepKind // used to pick an icon / colour for the step
   stack?: string[] // call stack of user function names (outermost → current)
+  nodeId?: number // active recursion-tree node id for this step (-1 = none)
+}
+
+// A single call in the recursion tree (built from call/return trace events).
+export interface TreeNode {
+  id: number
+  parent: number // -1 for a root call
+  label: string // e.g. "fib(6)"
+  depth: number
+  born: number // step index when the call started
+  dead: number // step index when it returned (-1 = still on the stack)
 }
 
 export type StepKind =

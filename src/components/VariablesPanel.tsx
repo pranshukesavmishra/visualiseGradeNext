@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Access, Value } from '../lang/types'
+import { Access, DictValue, isDict, Value } from '../lang/types'
 import { formatValue } from '../lang/interpreter'
 import ArrayViz, { Pointer } from './ArrayViz'
+import DictView from './DictView'
 
 interface Props {
   vars: Record<string, Value>
@@ -9,11 +10,13 @@ interface Props {
 }
 
 // Shows every variable: lists become the ArrayViz (with pointer badges for the
-// index variables that point into them), scalars become "memory boxes".
+// index variables that point into them), dicts become key→value chips, and
+// scalars become "memory boxes".
 export default function VariablesPanel({ vars, accesses }: Props) {
   const entries = Object.entries(vars)
   const lists = entries.filter(([, v]) => Array.isArray(v)) as [string, Value[]][]
-  const scalars = entries.filter(([, v]) => !Array.isArray(v))
+  const dicts = entries.filter(([, v]) => isDict(v)) as [string, DictValue][]
+  const scalars = entries.filter(([, v]) => !Array.isArray(v) && !isDict(v))
 
   // Integer scalars can act as pointers into a list of the same length range.
   const intScalars = scalars.filter(
@@ -45,6 +48,10 @@ export default function VariablesPanel({ vars, accesses }: Props) {
           accesses={accesses}
           pointers={pointersFor(name, values.length)}
         />
+      ))}
+
+      {dicts.map(([name, dict]) => (
+        <DictView key={name} name={name} dict={dict} />
       ))}
 
       {scalars.length > 0 && (

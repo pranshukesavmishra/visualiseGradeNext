@@ -11,6 +11,7 @@ export interface RawFrame {
   vars: Record<string, Value>
   olen: number // number of complete console lines printed so far
   stack?: string[] // user function names, outermost → current
+  node?: number // active recursion-tree node id (-1 = none)
 }
 
 export function buildFrames(trace: RawFrame[], output: string, source: string): Frame[] {
@@ -47,6 +48,7 @@ export function buildFrames(trace: RawFrame[], output: string, source: string): 
       accesses: change.accesses,
       kind,
       stack: raw.stack,
+      nodeId: raw.node,
     })
     prev = raw.vars
   }

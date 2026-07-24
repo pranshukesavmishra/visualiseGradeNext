@@ -1,3 +1,4 @@
+import { ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Frame, StepKind } from '../lang/types'
 import VariablesPanel from './VariablesPanel'
@@ -5,6 +6,7 @@ import Console from './Console'
 
 interface Props {
   frame: Frame | null
+  aboveVars?: ReactNode // optional extra viz (e.g. recursion tree)
 }
 
 const ICONS: Record<StepKind, string> = {
@@ -18,7 +20,7 @@ const ICONS: Record<StepKind, string> = {
 }
 
 // The right-hand "movie screen": call stack, narration, live variables, console.
-export default function Stage({ frame }: Props) {
+export default function Stage({ frame, aboveVars }: Props) {
   const vars = frame?.vars ?? {}
   const accesses = frame?.accesses ?? []
   const output = frame?.output ?? []
@@ -59,6 +61,8 @@ export default function Stage({ frame }: Props) {
           </AnimatePresence>
         </div>
       )}
+
+      {aboveVars}
 
       <div className="stage-section-title">Variables — the computer's memory</div>
       <VariablesPanel vars={vars} accesses={accesses} />

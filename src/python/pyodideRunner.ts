@@ -7,11 +7,12 @@
 // this mode needs an internet connection and does NOT work inside a sandboxed
 // preview that blocks outside requests. Failures are reported clearly.
 
-import { Frame, Value } from '../lang/types'
+import { Frame, TreeNode, Value } from '../lang/types'
 import { buildFrames, RawFrame } from './buildFrames'
 
 export interface PyRunResult {
   frames: Frame[] // step-by-step trace, for the animated visualiser
+  tree: TreeNode[] // recursion tree (calls made over the run)
   output: string // full console output
   images: string[] // base64-encoded PNGs from matplotlib figures
   error: string | null
@@ -110,6 +111,13 @@ def _gn_snap(v):
                 else:
                     out.append(repr(x)[:40])
             return out
+        if isinstance(v, dict):
+            ents = []
+            for i, (k, val) in enumerate(v.items()):
+                if i >= 30:
+                    break
+                ents.append([str(k), _gn_snap(val)])
+            return {'__kind__': 'dict', 'entries': ents}
         return (type(v).__name__ + ': ' + repr(v))[:120]
     except Exception:
         return '<unshowable>'
@@ -138,26 +146,69 @@ def _gn_stack(frame):
     names.reverse()
     return names
 
+def _gn_arg(v):
+    try:
+        if isinstance(v, bool):
+            return 'True' if v else 'False'
+        if isinstance(v, (int, float)):
+            return repr(v)
+        if isinstance(v, str):
+            return '"' + (v if len(v) <= 12 else v[:12] + '\\u2026') + '"'
+        if isinstance(v, (list, tuple)):
+            return '[' + str(len(v)) + ']'
+        return type(v).__name__
+    except Exception:
+        return '?'
+
 def _gn_run(_src):
     _frames = []
+    _nodes = []
+    _active = []
+    _nid = [0]
     _MAX = 1500
+    _NODE_MAX = 500
     _truncated = [False]
     _buf = io.StringIO()
 
     def _tracer(frame, event, arg):
         if frame.f_code.co_filename != _GN_FILE:
             return None
-        if event == 'line':
+        if event == 'call':
+            name = frame.f_code.co_name
+            if name != '<module>' and len(_nodes) < _NODE_MAX:
+                cc = frame.f_code
+                argnames = cc.co_varnames[:cc.co_argcount]
+                parts = [_gn_arg(frame.f_locals.get(a)) for a in argnames]
+                nid = _nid[0]
+                _nid[0] += 1
+                _nodes.append({
+                    'id': nid,
+                    'parent': _active[-1] if _active else -1,
+                    'label': name + '(' + ', '.join(parts) + ')',
+                    'depth': len(_active),
+                    'born': len(_frames),
+                    'dead': -1,
+                })
+                _active.append(nid)
+        elif event == 'line':
             if len(_frames) < _MAX:
                 _frames.append({
                     'line': frame.f_lineno,
                     'vars': _gn_capture(frame),
                     'olen': _buf.getvalue().count('\\n'),
                     'stack': _gn_stack(frame),
+                    'node': _active[-1] if _active else -1,
                 })
             else:
                 _truncated[0] = True
                 return None
+        elif event == 'return':
+            if _active:
+                nid = _active.pop()
+                for nd in _nodes:
+                    if nd['id'] == nid:
+                        nd['dead'] = len(_frames)
+                        break
         return _tracer
 
     try:
@@ -178,6 +229,7 @@ def _gn_run(_src):
 
     return json.dumps({
         'frames': _frames,
+        'tree': _nodes,
         'output': _buf.getvalue(),
         'error': _err,
         'truncated': _truncated[0],
@@ -203,6 +255,7 @@ _json.dumps(_imgs)
 
 interface RawResult {
   frames: RawFrame[]
+  tree: TreeNode[]
   output: string
   error: string | null
   truncated: boolean
@@ -233,6 +286,7 @@ export async function runPython(code: string, onStatus?: (msg: string) => void):
 
     return {
       frames: buildFrames(parsed.frames, parsed.output, code),
+      tree: parsed.tree ?? [],
       output: parsed.output,
       images,
       error: parsed.error ? cleanTraceback(parsed.error) : null,
@@ -240,7 +294,7 @@ export async function runPython(code: string, onStatus?: (msg: string) => void):
     }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    return { frames: [], output: '', images: [], error: cleanTraceback(message), truncated: false }
+    return { frames: [], tree: [], output: '', images: [], error: cleanTraceback(message), truncated: false }
   }
 }
 

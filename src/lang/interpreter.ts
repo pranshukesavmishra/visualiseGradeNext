@@ -3,7 +3,7 @@
 // number of steps and frames so a runaway loop can never freeze the browser.
 
 import { parse, ParseError, Stmt, Expr } from './parser'
-import { Access, AccessKind, Frame, RunResult, StepKind, Value } from './types'
+import { Access, AccessKind, Frame, isDict, RunResult, StepKind, Value } from './types'
 
 class RuntimeError extends Error {
   line: number
@@ -393,6 +393,7 @@ function isTruthy(v: Value): boolean {
   if (typeof v === 'boolean') return v
   if (typeof v === 'number') return v !== 0
   if (typeof v === 'string') return v.length > 0
+  if (isDict(v)) return v.entries.length > 0
   if (Array.isArray(v)) return v.length > 0
   return false
 }
@@ -400,6 +401,12 @@ function isTruthy(v: Value): boolean {
 function valuesEqual(a: Value, b: Value): boolean {
   if (Array.isArray(a) && Array.isArray(b)) {
     return a.length === b.length && a.every((x, i) => valuesEqual(x, b[i]))
+  }
+  if (isDict(a) && isDict(b)) {
+    return (
+      a.entries.length === b.entries.length &&
+      a.entries.every(([k, v], i) => b.entries[i][0] === k && valuesEqual(v, b.entries[i][1]))
+    )
   }
   return a === b
 }
@@ -429,7 +436,9 @@ function deepCopyEnv(env: Record<string, Value>): Record<string, Value> {
 }
 
 function deepCopyValue(v: Value): Value {
-  return Array.isArray(v) ? v.map(deepCopyValue) : v
+  if (Array.isArray(v)) return v.map(deepCopyValue)
+  if (isDict(v)) return { __kind__: 'dict', entries: v.entries.map(([k, val]) => [k, deepCopyValue(val)]) }
+  return v
 }
 
 function describe(expr: Expr): string {
@@ -446,6 +455,7 @@ export function formatValue(v: Value): string {
   if (typeof v === 'number') return formatNumber(v)
   if (typeof v === 'string') return `"${v}"`
   if (typeof v === 'boolean') return v ? 'True' : 'False'
+  if (isDict(v)) return `{${v.entries.map(([k, val]) => `${k}: ${formatValue(val)}`).join(', ')}}`
   return `[${v.map(formatValue).join(', ')}]`
 }
 
@@ -453,6 +463,7 @@ function formatForPrint(v: Value): string {
   if (typeof v === 'number') return formatNumber(v)
   if (typeof v === 'string') return v // no quotes when printed
   if (typeof v === 'boolean') return v ? 'True' : 'False'
+  if (isDict(v)) return formatValue(v)
   return `[${v.map(formatValue).join(', ')}]`
 }
 

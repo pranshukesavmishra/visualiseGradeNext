@@ -46,6 +46,37 @@ for i in range(n):
 print("Sorted:", nums)`,
   },
   {
+    id: 'fib-tree',
+    title: 'Fibonacci (tree)',
+    emoji: '🌳',
+    tag: 'recursion tree',
+    code: `# Watch the recursion tree grow and collapse!
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+print("fib(6) =", fib(6))`,
+  },
+  {
+    id: 'two-sum',
+    title: 'Two Sum (hash map)',
+    emoji: '🗂️',
+    tag: 'dictionary',
+    code: `# Find two numbers that add up to the target — using a hash map
+def two_sum(nums, target):
+    seen = {}
+    for i in range(len(nums)):
+        need = target - nums[i]
+        if need in seen:
+            return [seen[need], i]
+        seen[nums[i]] = i
+    return []
+
+nums = [3, 8, 12, 1, 9, 14, 6, 5]
+print("indices:", two_sum(nums, 18))`,
+  },
+  {
     id: 'basics',
     title: 'Python Basics',
     emoji: '🐍',
